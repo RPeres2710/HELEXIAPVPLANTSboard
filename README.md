@@ -32,36 +32,5 @@ Para mais informações, entre em contato:
 
 Website: Movisafe América Latina
 Desenvolvedor : Romario Peres - Movisafe Security Manager - r.peres@movisafe-americalatina.com
-About
-No description, website, or topics provided.
-Resources
- Readme
-License
- Apache-2.0 license
- Activity
-Stars
- 0 stars
-Watchers
- 1 watching
-Forks
- 0 forks
-Releases
-No releases published
-Create a new release
-Packages
-No packages published
-Publish your first package
-Deployments
-4
- github-pages 2 days ago
-+ 3 deployments
-Languages
-HTML
-71.1%
- 
-JavaScript
-15.6%
- 
-CSS
-13.3%
-Footer
+
+
