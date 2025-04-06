@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELEXIA PV PLANTS - MOVISAFE AMLAT</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+            background: linear-gradient(135deg, #143d0f, #013046);
+            color: white;
+            overflow: hidden;
+        }
+
+        .menu-button {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: white;
+            color: black;
+            border: none;
+            padding: 8px 12px;
+            font-size: 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .menu-button:hover, .menu-button:focus {
+            background: #f0f0f0;
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 260px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 1rem;
+            padding-top: 50px;
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+            z-index: 999;
+        }
+
+        .sidebar.hidden {
+            transform: translateX(-260px);
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 8px 12px;
+            font-weight: bold;
+        }
+
+        .sidebar a:hover, .sidebar a:focus {
+            background: #333;
+            outline: none;
+        }
+
+        #main {
+            flex-grow: 1;
+            padding: 1rem;
+            transition: margin-left 0.3s ease;
+        }
+
+        header {
+            position: relative;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100% !important;
+            background: linear-gradient(to right, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.2));
+            z-index: -1;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.7);
+            font-weight: bold;
+            margin: 0;
+            padding: 10px 20px;
+        }
+
+        .search-bar {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            width: 200px;
+            box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+            transition: width 0.3s ease, top 0.3s ease, right 0.3s ease;
+            z-index: 10;
+        }
+
+        .search-bar::placeholder {
+            color: #888;
+            opacity: 1;
+        }
+
+        .search-bar:focus {
+            outline: none;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+            width: 220px;
+        }
+
+        .map-container {
+            display: flex;
+            width: 100%;
+            height: calc(100vh - 150px); /* Ajuste sutil: reduzido de 180px para 150px para aumentar a altura dos mapas */
+        }
+
+        #map, #google-map {
+            width: 50%;
+            height: 100%;
+            border-radius: 12px;
+        }
+
+        #google-map {
+            border: none;
+        }
+
+        .bordered {
+            border: 4px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 10px rgba(224, 153, 153, 0.4);
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+            border: 3px solid #1a5e20;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .leaflet-popup-content {
+            margin: 0;
+        }
+
+        .popup-content {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 300px;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .popup-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #005f4b;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .popup-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .popup-item {
+            margin-bottom: 12px;
+            padding: 8px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .popup-item strong {
+            color: #005f4b;
+            display: block;
+            font-size: 15px;
+        }
+
+        .popup-item span {
+            font-weight: normal;
+            color: #555;
+            font-size: 13px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                max-width: 300px;
+            }
+            .sidebar.hidden {
+                transform: translateX(-100%);
+            }
+            #main {
+                margin-left: 0;
+            }
+            header h1 {
+                font-size: 1.8rem;
+            }
+            .search-bar {
+                top: 60px;
+                right: 15px;
+                width: 150px;
+            }
+            .search-bar:focus {
+                width: 170px;
+            }
+            .map-container {
+                flex-direction: column;
+                height: calc(100vh - 190px); /* Ajuste para telas menores */
+            }
+            #map, #google-map {
+                width: 100%;
+                height: 50%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .search-bar {
+                position: relative;
+                top: auto;
+                right: auto;
+                width: 100%;
+                margin: 10px 0;
+                box-sizing: border-box;
+            }
+            .search-bar:focus {
+                width: 100%;
+            }
+            .map-container {
+                height: calc(100vh - 200px); /* Ajuste para telas muito pequenas */
+            }
+        }
+    </style>
+</head>
+<body>
+    <button id="toggleSidebar" class="menu-button" aria-label="Abrir ou fechar menu">☰</button>
+
+    <div id="sidebar" class="sidebar hidden">
+        <ul>
+            <li><a href="#" data-lat="-23.1286" data-lng="-52.3136">Alto Paraná</a></li>
+            <li><a href="#" data-lat="-19.058" data-lng="-51.191">Paranaíba</a></li>
+            <li><a href="#" data-lat="-4.0272" data-lng="-38.1292">Beberibe</a></li>
+            <li><a href="#" data-lat="-4.6356" data-lng="-38.3561">Cascavel</a></li>
+            <li><a href="#" data-lat="-4.5763" data-lng="-38.0868">Jaguaruana</a></li>
+            <li><a href="#" data-lat="-23.3196" data-lng="-53.2584">Cidade Gaúcha</a></li>
+            <li><a href="#" data-lat="-19.1153" data-lng="-51.7409">Cassilândia</a></li>
+            <li><a href="#" data-lat="-22.5333" data-lng="-52.5833">Euclides da Cunha Paulista</a></li>
+            <li><a href="#" data-lat="-23.2000" data-lng="-51.8333">Iguaraçu</a></li>
+            <li><a href="#" data-lat="-22.9333" data-lng="-53.1333">Loanda</a></li>
+            <li><a href="#" data-lat="-23.1500" data-lng="-51.7667">Munhoz de Melo</a></li>
+            <li><a href="#" data-lat="-23.1833" data-lng="-52.2000">Nova Esperança</a></li>
+            <li><a href="#" data-lat="-19.0167" data-lng="-53.2833">Paraíso das Águas</a></li>
+            <li><a href="#" data-lat="-16.8306" data-lng="-49.5319">Guapó</a></li>
+            <li><a href="#" data-lat="-16.9711" data-lng="-49.7758">Cezarina</a></li>
+            <li><a href="#" data-lat="-22.1000" data-lng="-49.4333">Presidente Alves</a></li>
+            <li><a href="#" data-lat="-21.2611" data-lng="-50.6428">Guararapes</a></li>
+            <li><a href="#" data-lat="-5.4589" data-lng="-37.5208">Governador Dix-Sept Rosado</a></li>
+            <li><a href="#" data-lat="-21.8761" data-lng="-51.8436">Presidente Venceslau</a></li>
+            <li><a href="#" data-lat="-11.7272" data-lng="-61.7714">Rolim de Moura</a></li>
+            <li><a href="#" data-lat="-29.9592" data-lng="-51.7222">São Jerônimo</a></li>
+            <li><a href="#" data-lat="-22.7309" data-lng="-45.1248">Lorena</a></li>
+            <li><a href="#" data-lat="-22.5732" data-lng="-44.9690">Cruzeiro</a></li>
+            <li><a href="#" data-lat="-23.1000" data-lng="-45.7000">Caçapava</a></li>
+            <li><a href="#" data-lat="-23.5333" data-lng="-49.2500">Taquarituba</a></li>
+        </ul>
+    </div>
+
+    <div id="main">
+        <header>
+            <h1>HELEXIA PV PLANTS - MOVISAFE AMLAT</h1>
+            <input type="text" class="search-bar" placeholder="Pesquisar localização..." aria-label="Pesquisar localização">
+        </header>
+        <div class="map-container">
+            <div id="map" class="map bordered"></div>
+            <iframe id="google-map" src="https://www.google.com/maps/d/u/0/embed?mid=1_ngnVbQ7IpoQpcJ3W-IeL6I5giGcob8&ehbc=2E312F&noprof=1" width="100%" height="100%" frameborder="0"></iframe>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Dados das localizações
+        const locations = [
+            { name: "Alto Paraná", lat: -23.1286, lng: -52.3136, securityInfo: "Polícia Militar: R. Cel. João B Lopes, 252 - Jardim Guanabara, Paranavaí - PR, 87706-370, tel 04434211700\nDelegacia: R. Estados Unidos - Alto Paraná, PR, 87750-000, Tel: 04434471202\nBombeiros: Av. John Kenedy, 1-135 - Jardim Iguacu, Paranavaí - PR, 87705-370, tel 04434231269\nHospital Público: Av. Felipe Camarão, 645 - Centro, Nova Esperança - PR, 87600-000, tel 04431124350" },
+            { name: "Paranaíba", lat: -19.058, lng: -51.191, securityInfo: "Polícia Militar: \nDelegacia: R. José Rodrigues Ferraz, 945 - Jardim Santana, Paranaíba - MS, 79500-000, 06735031393\nBombeiros: R. Benedito da Palma Oliveira, 285 - Vila Santo Antonio, Paranaíba - MS, 79500-000, 06735031071\nHospital Público: Av. Durval Rodrigues Lopes, 400 - Ipê Branco, Paranaíba - MS, 79500-000, tel 06735580160" },
+            { name: "Beberibe", lat: -4.0272, lng: -38.1292, securityInfo: "Polícia Militar: R. Joaquim Facó, 370 - Beberibe, CE, 62840-000, tel 08533381190\nDelegacia: R. Jonas Bessa, 214 - Beberibe, CE, 62840-000, tel 08533382590\nBombeiros: Conj. Hab. Dr. Abelardo Filho, Aracati - CE, 62800-000 (Aracati) tel (88) 3421-1346 ou (88) 3421-1468\nHospitais Públicos: R. Monsenhor Dourado, 598 - Beberibe, CE, 62840-000, tel 08533381293" },
+            { name: "Cascavel", lat: -4.6356, lng: -38.3561, securityInfo: "Polícia Militar: Estr. Mata Quiri Cascavel, 3190 - Cascavel, CE, 62850-000, tel (85) 3334-1172\nDelegacia: R. Maj. Eng. José Goiânia Primo, 2356 - Cascavel, CE, 62850-000, tel (85) 3334-3591\nBombeiros: R. Padre Pedro de Alencar, 1091 - Messejana, Fortaleza - CE, 60180-410 (Messejana) tel (85) 31012018\nHospital Público: R. Bia Coelho, 2205 - Cascavel, CE, 62850-000, tel 08533341475" },
+            { name: "Jaguaruana", lat: -4.5763, lng: -38.0868, securityInfo: "Polícia Militar: Rua José Cláudio de Melo, s/n - Centro, tel (88) 3418.1370 /1190\nDelegacia: 120, R. José Cláudio de Melo, 10, Jaguaruana - CE, 62823-000, tel 08834181370\nBombeiros: R. Padre Pedro de Alencar, 1091 - Messejana, Fortaleza - CE, 60180-410 , tel 08531012018\nHospital Público Jaguaruana, CE, 62823-000, tel 08834181388" },
+            { name: "Cidade Gaúcha", lat: -23.3196, lng: -53.2584, securityInfo: "Polícia Militar: R. Juscelino Kubitscheck, 927-1041, Cidade Gaúcha - PR, 87820-000, tel 04436751578\nDelegacia: R. Rio Grandense, 57, Cidade Gaúcha - PR, 87820-000, tel 04436751202\nBombeiros: Av. Allan Kardec, 700 - Zona de Armazém, Cianorte - PR, 87207-012, tel (44) 3351-3350\nHospital Público: R. Firmínio Viêira de Oliveira, 1947 - Centro, Cidade Gaúcha - PR, 87820-000, tel 04436751557" },
+            { name: "Cassilândia", lat: -19.1153, lng: -51.7409, securityInfo: "Polícia Militar: 179, R. Vicente de Andrade Vasconcelos, 51, Cassilândia - MS, 79540-000\nDelegacia: BR-158, 0 - Centro, Cassilândia - MS, 79540-000, tel 06735961366\nBombeiros: R. Benedito da Palma Oliveira, 285 - Vila Santo Antonio, Paranaíba - MS, 79500-000, tel (67) 3503-1094 ou (67) 3503-1071\nHospital Público: Rua Pedro Pereira de Almeida, 391 - Centro, Cassilândia - MS, 79540-000 , (67) 3596-1133" },
+            { name: "Euclides da Cunha Paulista", lat: -22.5333, lng: -52.5833, securityInfo: "Policia Militar: R. Gilberto Luís da Rocha, Euclides da Cunha Paulista - SP, 19275-000, tel (18) 32831265\nDelegacia: Rua Adriane Cristina V Silva, 503, Euclides da Cunha Paulista - SP, 19275-000, tel 01832831255\nBombeiros: R. Antônio Silva, 1757, Euclides da Cunha Paulista - SP, 19275-000, tel (18)32832321\nHospital Público: Av. dos Barrageiros, S/N - Primavera, Rosana - SP, 19274-000, tel (18) 3284-9500" },
+            { name: "Iguaraçu", lat: -23.2000, lng: -51.8333, securityInfo: "Policia Militar: Rua João Brunetti – 314, Iguaraçu PR, CEP 86750-000\nDelegacia: R. João Brunete, 314 - Jardim Uniao Um, Iguaraçu - PR, 86750-000, TEL Telefone: (44) 3248-1235\nBombeiros: Av. Brasil, 254 - Jardim Uniao Um, Iguaraçu - PR, 86750-000 tel 044999192788\nHospital Público: R. Santos Dumont, 555 - Zona 03, Maringá - PR, 87050-100, tel (44) 3027-5151" },
+            { name: "Loanda", lat: -22.9333, lng: -53.1333, securityInfo: "Polícia Militar: PR-182, km 69, Loanda - PR, 87900-000, tel 04434252305\nDelegacia: Av. Curitiba, 547 - Centro, Loanda - PR, 87900-000, tel 04434251564\nBombeiros: R. Tocantins, 150, Loanda - PR, 87900-000, tel 04434255143\nHospital Público: R. Cristóvão Colombo, 67, Loanda - PR, 87900-000, tel 04434258407" },
+            { name: "Munhoz de Melo", lat: -23.1500, lng: -51.7667, securityInfo: "Polícia Militar: Rua Interventor Manoel Ribas – 617, Centro, Munhoz de Mello, Cep 86760-000, tel (44) 3258 1121\nDelegacia: R. Des. Antônio Franco - Munhoz de Melo, PR, 86760-000, tel (44) 3258-1121\nBombeiros: Av. Brasil, 254 - Jardim Uniao Um, Iguaraçu - PR, 86750-000, tel 044999192788\nHospital Público: R. Domingos Ricardo de Lima, 531 - CENTRO, Munhoz de Melo - PR, 86760-000, tel 044999264413" },
+            { name: "Nova Esperança", lat: -23.1833, lng: -52.2000, securityInfo: "Polícia Militar: Rua Barão de Antonina, 84, Parque das Grevilhas, Nova Esperança-PR, Brasil, tel (44) 3252-4172 / (44) 3252-5172 / (44) 3252-5009\nDelegacia: R. Visc. de Guarapuava, 305 - Nova Esperança, PR, 87600-000, tel 04432524233\nBombeiros: Av. São José, 256 - CENTRO, Nova Esperança - PR, 87600-000, tel 04432528331\nHospital Público: Av. Felipe Camarão, 645 - Centro, Nova Esperança - PR, 87600-000, tel 04431124350" },
+            { name: "Paraíso das Águas", lat: -19.0167, lng: -53.2833, securityInfo: "Polícia Militar: Rodrigues, 34 Centro, R. Epaminondas Nogueira de Camargo, Paraíso das Águas - MS, 79550-000, tel 06732481141\nDelegacia: R. Dejanira R dos Santos, 596 - Centro, Paraíso das Águas - MS, 79550-000, tel 06732481393\nBombeiros: Rua Ambrosina Paes Coelho, 717, Centro, Costa Rica - MS (CEP: 79550-000), tel (67) 3247-1133\nHospital Público: Av. José Ferreira da Costa, 2222 - Vila Santana, Costa Rica - MS, 79550-000, tel 06732476600" },
+            { name: "Guapó", lat: -16.8306, lng: -49.5319, securityInfo: "Polícia Militar: R. Rodolfo Taváres - Centro, Guapó - GO, 75350-000, tel 06235521190\nDelegacia: R. Santa Helena, 954 - Vila Joao Rasse, Guapó - GO, 75350-000, tel 06235521128\nBombeiros: R. da Pecuária, 90 - Santuário, Trindade - GO, 75380-000, tel 06235053369\nHospital Público: Rua P-2, Quadra 11, Lote 01, Setor Primavera, Guapó - GO, CEP: 75350-000, tel (62) 3552-1122 ou (62) 3552-1280" },
+            { name: "Cezarina", lat: -16.9711, lng: -49.7758, securityInfo: "Polícia Militar: R. Rui Barbosa, Cezarina - GO, 76195-000, tel 06435431190\nDelegacia: Rua 03, Quadra 03, Lote 01, Setor Cristina, Trindade - GO, CEP: 75380-000, tel (62) 3505-6110 / 3505-6651 / 3505-5573\nBombeiros: Avenida Manoel Monteiro, esquina com Rua da Pecuária, Jardim Salvador, Trindade - GO, CEP: 75388-478, tel (62) 3505-1153 ou (62) 3505-3369\nHospital Público: Avenida Luís Cardoso de Almeida, Quadra 10, Lotes 1-5, s/n - Centro, Cezarina - GO, 76195-000, tel 06435436012" },
+            { name: "Presidente Alves", lat: -22.1000, lng: -49.4333, securityInfo: "Polícia Militar: Rua Barão do Rio Branco, 420, Centro, Garça - SP, CEP: 17400-000, tel (14) 3471-1230 ou (14) 3471-1231\nDelegacia: Rua Carlos Ferrari, 260, Centro, Garça - SP, CEP: 17400-000, tel (14) 3471-1210 ou (14) 3471-1266\nBombeiros: Rua Barão do Rio Branco, 420, Centro, Garça - SP, CEP: 17400-000, tel (14) 3471-1250\nHospital Público: Avenida Engenheiro Luiz Edmundo Carrijo Coube, 1-100, Vila Universitária, Bauru - SP, CEP: 17033-360, tel (14) 3103-7777" },
+            { name: "Guararapes", lat: -21.2611, lng: -50.6428, securityInfo: "Polícia Militar: R. Duque de Caxias, 1000 - Guararapes, SP, 16700-000, tel 01836061347\nDelegacia: Rua Prudente de Morais, 385, Centro, Guararapes - SP, CEP: 16700-000, tel (18) 3606-4345\nBombeiros: R. Lions Club, 100 - Morada dos Nobres, Araçatuba - SP, 16022-000, tel 01821022670\nHospital Público: Rua José Rabelo de Vasconcelos, 720, Centro, Guararapes - SP, CEP: 16700-000, tel (18) 3406-8600" },
+            { name: "Governador Dix-Sept Rosado", lat: -5.4589, lng: -37.5208, securityInfo: "Polícia Militar: Avenida Aldemir Fernandes, 147, Bairro Aeroporto, Mossoró - RN, CEP: 59607-150, tel (84) 3315-5601\nDelegacia: Rua José Fernandes, 135, Centro, Governador Dix-Sept Rosado - RN, CEP: 59790-000, tel (84) 3320-0135\nBombeiros: Rua Felipe Camarão, 149, Aeroporto, Mossoró - RN, CEP: 59607-340, tel (84) 3315-5050\nHospital Público: Rua Francisco Bessa, 168, Nova Betânia, Mossoró - RN, CEP: 59612-207, tel (84) 3317-6073" },
+            { name: "Presidente Venceslau", lat: -21.8761, lng: -51.8436, securityInfo: "Polícia Militar: Av. João Pessoa, 710 - 1 - Jardim Europa, Pres. Venceslau - SP, 19400-000, tel 01832715740\nDelegacia: R. Alm. Barroso, 341 - Centro, Pres. Venceslau - SP, 19400-000, tel 01832712060\nBombeiros: Av. Princesa Isabel, 695 - Centro, Pres. Venceslau - SP, 19400-000, tel 01832715957\nHospital Público: Rua Emiliano, R. Antônio Vila Nova, 66 - Centro, Pres. Venceslau - SP, 19400-059, tel 01832711124" },
+            { name: "Rolim de Moura", lat: -11.7272, lng: -61.7714, securityInfo: "Polícia Militar: R. Corumbiara, 4707 - Centro, Rolim de Moura - RO, 78987-000, tel 06934421319\nDelegacia: R. Jamari, 5416 - São Cristovao, Rolim de Moura - RO, 78987-000, tel 06934421411\nBombeiros: Av. Goiânia, 5440 - Centro, Rolim de Moura - RO, 76940-000, tel 06934423193\nHospital Público: Av. Cuiabá, 5414 - Planalto, Rolim de Moura - RO, 76940-000, tel 06934421711" },
+            { name: "São Jerônimo", lat: -29.9592, lng: -51.7222, securityInfo: "Polícia Militar: Rua São Jerônimo, 247, Centro, São Jerônimo - RS, CEP: 96700-000, tel (51) 3651-1212\nDelegacia: R. Nicácio Machado, 51 - Centro, São Jerônimo - RS, 96700-000, tel 05136519054\nBombeiros: Av. Ramiro Barcelos, 1096 - Centro, São Jerônimo - RS, 96700-000, tel 05136512055\nHospital Público: Rua - Av. Rio Branco, 1008 - 01 - Bela Vista, São Jerônimo - RS, 96700-000, tel 05136518500" },
+            { name: "Lorena", lat: -22.7309, lng: -45.1248, securityInfo: "Polícia Militar: Av. Cel. Márciano, 122-218 - Santo Antonio, Lorena - SP, 12608-570, tel 01231532236\nDelegacia: R. Joaquim Cardoso Machado, 385 - Vila Geny, Lorena - SP, 12604-110, tel 01231573800\nBombeiros: R. Padre João Renaudin, 295 - Olaria, Lorena - SP, 12607-150, tel 01233011627\nHospital Público: Rua Dom Bosco, 562, Centro, Lorena - SP, CEP: 12600-100, tel (12) 3159-3344 ou (12) 3159-3349" },
+            { name: "Cruzeiro", lat: -22.5732, lng: -44.9690, securityInfo: "Polícia Militar: R. Cap. Neco, 140 - Vila Ana Rosa Novaes, Cruzeiro - SP, 12701-000, tel 01231440601\nDelegacia: R. Dr. Celestino, 156 - Centro, Cruzeiro - SP, 12701-430, tel 01231432010\nBombeiros: R. Independência, 630 - Vila Paulista, Cruzeiro - SP, 12702-470, tel 01231442100\nHospital Público: Av. Maj. Novaes, 715 - Centro, Cruzeiro - SP, 12701-000, tel 01231847000" },
+            { name: "Caçapava", lat: -23.1000, lng: -45.7000, securityInfo: "Polícia Militar: R. São Francisco, 900 - Vila Antônio Augusto Luiz, Caçapava - SP, 12287-010, tel 01236532720\nDelegacia: R. Comendador João Lopes, 130 - Centro, Caçapava - SP, 12281-490, tel 01236525535\nBombeiros: R. São Francisco, 888 - Vila Antônio Augusto Luiz, Caçapava - SP, 12287-010, tel (12) 3653-1212\nHospital Público: R. Cel. João Dias Guimarães, 266 - Centro, Caçapava - SP, 12281-350, tel 01232211000" },
+            { name: "Taquarituba", lat: -23.5333, lng: -49.2500, securityInfo: "Polícia Militar: R. Cel. Macedo, 190 - Jardim Dona Amelia, Taquarituba - SP, 18740-000\nDelegacia: R. Mal. Floriano Peixoto, 938 - Centro, Taquarituba - SP, 18740-000, tel 01437621222\nBombeiros: R. Mal. Floriano Peixoto, 95 - Centro, Taquarituba - SP, 18740-000, tel 01437621700\nHospital Público: Rua José Gomes Loureiro, 1135, Centro, Taquarituba - SP, CEP: 18740-000, tel (14) 3762-1318" }
+        ];
+
+        // Inicializar o mapa Leaflet sem o controle de zoom padrão
+        const map = L.map('map', {
+            zoomControl: false // Desativar o controle de zoom padrão
+        }).setView([-15.7801, -47.9292], 4);
+
+        // Adicionar o controle de zoom apenas no canto superior direito
+        L.control.zoom({
+            position: 'topright'
+        }).addTo(map);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        let markers = [];
+
+        // Adicionar marcadores ao mapa
+        locations.forEach(location => {
+            const marker = L.circleMarker([location.lat, location.lng], {
+                radius: 10,
+                color: "#00897b",
+                fillColor: "#00897b",
+                fillOpacity: 1
+            }).addTo(map);
+
+            markers.push({ marker, location });
+
+            // Efeito de hover nos marcadores
+            marker.on('mouseover', function () {
+                this.setStyle({
+                    color: "#ff5733",
+                    fillColor: "#ff5733"
+                });
+            });
+            marker.on('mouseout', function () {
+                this.setStyle({
+                    color: "#00897b",
+                    fillColor: "#00897b"
+                });
+            });
+
+            // Adicionar tooltip
+            marker.bindTooltip(location.name, {
+                permanent: false,
+                direction: "top",
+                offset: [0, -10]
+            });
+
+            // Criar pop-up
+            const securityItems = location.securityInfo.split('\n').map(item => {
+                const [title, ...details] = item.split(': ');
+                return `<li class="popup-item"><strong>${title}:</strong> <span>${details.join(': ')}</span></li>`;
+            }).join('');
+
+            marker.bindPopup(`
+                <div class="popup-content">
+                    <div class="popup-title">${location.name}</div>
+                    <ul class="popup-list">
+                        ${securityItems}
+                    </ul>
+                </div>
+            `);
+
+            // Evento de clique no marcador
+            marker.on('click', function () {
+                map.setView([location.lat, location.lng], 13);
+                const iframe = document.getElementById("google-map");
+                const baseUrl = "https://www.google.com/maps/d/u/0/embed?mid=1_ngnVbQ7IpoQpcJ3W-IeL6I5giGcob8&ehbc=2E312F";
+                iframe.src = `${baseUrl}&ll=${location.lat},${location.lng}&z=13`;
+            });
+        });
+
+        // Funcionalidade do menu suspenso
+        const toggleSidebar = document.getElementById('toggleSidebar');
+        const sidebar = document.getElementById('sidebar');
+
+        toggleSidebar.addEventListener('click', () => {
+            sidebar.classList.toggle('hidden');
+        });
+
+        // Evento de clique nos links da sidebar
+        const sidebarLinks = document.querySelectorAll('.sidebar a');
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const lat = parseFloat(link.getAttribute('data-lat'));
+                const lng = parseFloat(link.getAttribute('data-lng'));
+                map.setView([lat, lng], 13);
+                const iframe = document.getElementById("google-map");
+                const baseUrl = "https://www.google.com/maps/d/u/0/embed?mid=1_ngnVbQ7IpoQpcJ3W-IeL6I5giGcob8&ehbc=2E312F";
+                iframe.src = `${baseUrl}&ll=${lat},${lng}&z=13`;
+                sidebar.classList.add('hidden'); // Fechar a sidebar após clicar
+            });
+        });
+
+        // Funcionalidade de pesquisa com associação ao menu suspenso
+        const searchBar = document.querySelector('.search-bar');
+
+        searchBar.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                const query = searchBar.value.trim().toLowerCase();
+                if (query) {
+                    // Primeiro, tentar encontrar uma correspondência no menu suspenso
+                    const matchedLocation = locations.find(location => 
+                        location.name.toLowerCase().includes(query)
+                    );
+
+                    if (matchedLocation) {
+                        // Se encontrou uma correspondência, centralizar o mapa
+                        map.setView([matchedLocation.lat, matchedLocation.lng], 13);
+                        const iframe = document.getElementById("google-map");
+                        const baseUrl = "https://www.google.com/maps/d/u/0/embed?mid=1_ngnVbQ7IpoQpcJ3W-IeL6I5giGcob8&ehbc=2E312F";
+                        iframe.src = `${baseUrl}&ll=${matchedLocation.lat},${matchedLocation.lng}&z=13`;
+                    } else {
+                        // Se não encontrou, usar a API Nominatim
+                        searchLocation(query);
+                    }
+                }
+            }
+        });
+
+        function searchLocation(query) {
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`, {
+                headers: {
+                    'User-Agent': 'MonitoramentoHelexia/1.0 (contato@exemplo.com)'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        const lat = parseFloat(data[0].lat);
+                        const lon = parseFloat(data[0].lon);
+                        map.setView([lat, lon], 13);
+                        const iframe = document.getElementById("google-map");
+                        const baseUrl = "https://www.google.com/maps/d/u/0/embed?mid=1_ngnVbQ7IpoQpcJ3W-IeL6I5giGcob8&ehbc=2E312F";
+                        iframe.src = `${baseUrl}&ll=${lat},${lon}&z=13`;
+                    } else {
+                        alert('Localização não encontrada. Tente novamente.');
+                    }
+                })
+                .catch(err => {
+                    console.error('Erro na pesquisa:', err);
+                    alert('Ocorreu um erro ao buscar a localização. Tente novamente mais tarde.');
+                });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    display: flex;
+    height: 100vh;
+    background: linear-gradient(135deg, #143d0f, #013046);
+    color: white;
+    overflow: hidden;
+}
+
+.menu-button {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+    background: white;
+    color: black;
+    border: none;
+    padding: 8px 12px;
+    font-size: 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.menu-button:hover, .menu-button:focus {
+    background: #f0f0f0;
+    outline: none;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 1rem;
+    padding-top: 50px;
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    z-index: 999;
+}
+
+.sidebar.hidden {
+    transform: translateX(-260px);
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar a {
+    color: white;
+    text-decoration: none;
+    display: block;
+    padding: 8px 12px;
+    font-weight: bold;
+}
+
+.sidebar a:hover, .sidebar a:focus {
+    background: #333;
+    outline: none;
+}
+
+#main {
+    flex-grow: 1;
+    padding: 1rem;
+    transition: margin-left 0.3s ease;
+}
+
+header {
+    position: relative;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.2));
+    z-index: -1;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+header h1 {
+    font-size: 2.2rem;
+    text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.7);
+    font-weight: bold;
+    margin: 0;
+    padding: 10px 20px;
+}
+
+.search-bar {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    width: 200px;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+    transition: width 0.3s ease, top 0.3s ease, right 0.3s ease;
+    z-index: 10;
+}
+
+.search-bar::placeholder {
+    color: #888;
+    opacity: 1;
+}
+
+.search-bar:focus {
+    outline: none;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+    width: 220px;
+}
+
+.map-container {
+    height: calc(100vh - 180px);
+}
+
+.map {
+    height: 100%;
+    border-radius: 12px;
+}
+
+.bordered {
+    border: 4px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 10px rgba(224, 153, 153, 0.4);
+}
+
+.custom-circle-icon .circle-pin {
+    width: 16px;
+    height: 16px;
+    background-color: #1a5e20;
+    border-radius: 50%;
+    border: 2px solid white;
+    transition: background-color 0.3s ease;
+}
+
+.custom-circle-icon:hover .circle-pin {
+    background-color: #ff6200;
+}
+
+.leaflet-popup-content-wrapper {
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+    border: 3px solid #1a5e20;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.leaflet-popup-content {
+    margin: 0;
+}
+
+.popup-box {
+    max-width: 300px;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #333;
+}
+
+.popup-box strong {
+    color: #1a5e20;
+}
+
+.popup-box .orgao {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.popup-box .orgao:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        max-width: 300px;
+    }
+    .sidebar.hidden {
+        transform: translateX(-100%);
+    }
+    #main {
+        margin-left: 0;
+    }
+    header h1 {
+        font-size: 1.8rem;
+    }
+    .search-bar {
+        top: 60px;
+        right: 15px;
+        width: 150px;
+    }
+    .search-bar:focus {
+        width: 170px;
+    }
+}
+
+@media (max-width: 480px) {
+    .search-bar {
+        position: relative;
+        top: auto;
+        right: auto;
+        width: 100%;
+        margin: 10px 0;
+        box-sizing: border-box;
+    }
+    .search-bar:focus {
+        width: 100%;
+    }
+    .map-container {
+        height: calc(100vh - 220px);
+    }
+}
